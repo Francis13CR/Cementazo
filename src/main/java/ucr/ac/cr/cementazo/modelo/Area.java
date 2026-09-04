@@ -1,6 +1,7 @@
 package ucr.ac.cr.cementazo.modelo;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Random;
 import javax.swing.ImageIcon;
 
@@ -8,40 +9,70 @@ public class Area {
 
     public static final int ANCHO = 1005;
     public static final int ALTO = 687;
-    public static final int PASO = 16;
+    public static final int FPS = 60;
+    public static final double PASO = 1000.0 / FPS;
 
     private ArrayList<ObjetoCaida> caidas;
+    private ArrayList<Perico> pericos;
     private Personaje bolanos;
     private int puntaje;
     private boolean terminado;
-    private int tiempoMs;
-    private int invulnerableMs;
-    private int esperaSpawnMs;
+    private double tiempoMs;
+    private double invulnerableMs;
+    private double esperaSpawnMs;
     private Random azar;
     private ImageIcon imgCemento;
     private ImageIcon imgDinero;
     private ImageIcon imgEsposas;
     private ImageIcon imgDerecha;
     private ImageIcon imgIzquierda;
+    private ImageIcon imgPericoVuelo;
+    private ImageIcon imgPericoRobando;
+    private ImageIcon imgPericoCaida;
+    private int indiceFondo;
+    private String nombreFondo;
 
     public Area() {
         azar = new Random();
-        imgCemento = Recursos.cargar("cemento.png");
-        imgDinero = Recursos.cargar("dinero.png");
-        imgEsposas = Recursos.cargar("esposas.png");
-        imgDerecha = Recursos.cargar("pDerecha.png");
-        imgIzquierda = Recursos.cargar("pIzquierda.png");
+        imgCemento = Recursos.cargarOColor(Recursos.SACO, Recursos.COLOR_SACO, 70, 97);
+        imgDinero = Recursos.cargarOColor(Recursos.BILLETES, Recursos.COLOR_BILLETES, 56, 40);
+        imgEsposas = Recursos.cargarOColor(Recursos.GRILLETES, Recursos.COLOR_GRILLETES, 64, 40);
+        imgPericoVuelo = Recursos.cargarOColor(Recursos.PERICO_VUELO, Recursos.COLOR_PERICO, 78, 62);
+        imgPericoRobando = Recursos.cargarOColor(Recursos.PERICO_ROBANDO, Recursos.COLOR_PERICO, 78, 62);
+        imgPericoCaida = Recursos.cargarOColor(Recursos.PERICO_CAIDA, Recursos.COLOR_PERICO, 78, 62);
+        imgDerecha = Recursos.cargarOColor(Recursos.PERSONAJE_DER, Recursos.COLOR_PERSONAJE, 0, 0);
+        if (Recursos.esValida(imgDerecha) && imgDerecha.getIconWidth() > 220) {
+            int nuevoAncho = 198;
+            int nuevoAlto = Math.max(1, imgDerecha.getIconHeight() * nuevoAncho / imgDerecha.getIconWidth());
+            imgDerecha = Recursos.escalar(imgDerecha, nuevoAncho, nuevoAlto);
+        }
+        imgIzquierda = Recursos.voltearHorizontal(imgDerecha);
         iniciarPartida();
     }
 
     public void iniciarPartida() {
         caidas = new ArrayList<ObjetoCaida>();
-        bolanos = new Personaje(imgDerecha, 400, 540, 3);
+        pericos = new ArrayList<Perico>();
+        int altoPers = 122;
+        if (imgDerecha != null && imgDerecha.getIconHeight() > 0) {
+            altoPers = imgDerecha.getIconHeight();
+        }
+        bolanos = new Personaje(imgDerecha, 400, ALTO - altoPers - 12, 3);
         puntaje = 0;
         terminado = false;
         tiempoMs = 0;
         invulnerableMs = 0;
         esperaSpawnMs = 400;
+        indiceFondo = 0;
+        nombreFondo = "San José";
+    }
+
+    public String getNombreFondo() {
+        return nombreFondo;
+    }
+
+    public String getArchivoFondo() {
+        return Recursos.FONDO;
     }
 
     public Personaje getBolanos() {
@@ -50,6 +81,10 @@ public class Area {
 
     public ArrayList<ObjetoCaida> getCaidas() {
         return new ArrayList<ObjetoCaida>(caidas);
+    }
+
+    public ArrayList<Perico> getPericos() {
+        return new ArrayList<Perico>(pericos);
     }
 
     public int getPuntaje() {
@@ -97,32 +132,35 @@ public class Area {
         if (terminado) {
             return;
         }
-        int segundoAnterior = tiempoMs / 1000;
+        int segundoAnterior = (int) (tiempoMs / 1000);
         tiempoMs += PASO;
         if (invulnerableMs > 0) {
             invulnerableMs -= PASO;
         }
-        if (tiempoMs / 1000 > segundoAnterior) {
+        if ((int) (tiempoMs / 1000) > segundoAnterior) {
             puntaje += 1;
         }
 
-        double velocidad = getVelocidadReal();
-        int holgura = (int) Math.ceil(velocidad) + 8;
-        ArrayList<ObjetoCaida> fuera = new ArrayList<ObjetoCaida>();
-        for (int i = 0; i < caidas.size(); i++) {
-            ObjetoCaida objeto = caidas.get(i);
-            objeto.caer(velocidad);
+        Iterator<ObjetoCaida> recorrido = caidas.iterator();
+        while (recorrido.hasNext()) {
+            ObjetoCaida objeto = recorrido.next();
+            if (objeto.estaRobado()) {
+                continue;
+            }
+            objeto.caer();
+            int holgura = (int) Math.ceil(objeto.getVelocidadY()) + 8;
             if (objeto.getY() > ALTO) {
-                fuera.add(objeto);
+                recorrido.remove();
                 if (objeto.getTipo() == TipoCaida.CEMENTO) {
                     perderVida();
                 }
             } else if (objeto.tocaLaTablaDe(bolanos, holgura)) {
-                fuera.add(objeto);
+                recorrido.remove();
                 atrapar(objeto);
             }
         }
-        caidas.removeAll(fuera);
+
+        actualizarPericos();
 
         esperaSpawnMs -= PASO;
         if (esperaSpawnMs <= 0 && caidas.size() < 7) {
@@ -131,8 +169,8 @@ public class Area {
         }
     }
 
-    private int intervaloSpawn() {
-        return (int) Math.max(420, 1200 - tiempoMs / 45.0);
+    private double intervaloSpawn() {
+        return Math.max(420, 1200 - tiempoMs / 45.0);
     }
 
     private void soltarObjeto() {
@@ -151,7 +189,43 @@ public class Area {
             anchoObjeto = imagen.getIconWidth();
         }
         int x = azar.nextInt(Math.max(1, ANCHO - anchoObjeto - 40)) + 20;
-        caidas.add(new ObjetoCaida(imagen, x, -imagenAlto(imagen), tipo));
+        ObjetoCaida creado = new ObjetoCaida(imagen, x, -imagenAlto(imagen), tipo, getVelocidadReal());
+        caidas.add(creado);
+        if (tipo == TipoCaida.DINERO && azar.nextDouble() > 0.5) {
+            int xPerico = azar.nextInt(Math.max(1, ANCHO - 120)) + 60;
+            pericos.add(new Perico(imgPericoVuelo, imgPericoRobando, imgPericoCaida,
+                    xPerico, -50, creado));
+        }
+    }
+
+    private void actualizarPericos() {
+        Iterator<Perico> recorrido = pericos.iterator();
+        while (recorrido.hasNext()) {
+            Perico perico = recorrido.next();
+            if (perico.estaVivo() && perico.getEstado() == Perico.Estado.BUSCANDO_DINERO) {
+                if (perico.getObjetivo() == null || !caidas.contains(perico.getObjetivo())) {
+                    perico.perderObjetivo();
+                }
+            }
+            perico.actualizar();
+            if (perico.estaVivo()) {
+                for (int i = 0; i < caidas.size(); i++) {
+                    ObjetoCaida objeto = caidas.get(i);
+                    if (objeto.getTipo() == TipoCaida.CEMENTO && perico.colisionaCon(objeto)) {
+                        perico.matar();
+                        break;
+                    }
+                }
+            }
+            if (perico.debeDesaparecer(ALTO)) {
+                if (perico.getEstado() == Perico.Estado.ESCAPANDO_CON_DINERO
+                        && perico.getObjetivo() != null
+                        && perico.getObjetivo().estaRobado()) {
+                    caidas.remove(perico.getObjetivo());
+                }
+                recorrido.remove();
+            }
+        }
     }
 
     private int imagenAlto(ImageIcon imagen) {

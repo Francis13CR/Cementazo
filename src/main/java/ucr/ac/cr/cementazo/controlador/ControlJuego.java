@@ -2,12 +2,20 @@ package ucr.ac.cr.cementazo.controlador;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.ArrayList;
+import javax.swing.Timer;
 import ucr.ac.cr.cementazo.modelo.Area;
 import ucr.ac.cr.cementazo.modelo.ObjetoCaida;
+import ucr.ac.cr.cementazo.modelo.Perico;
 import ucr.ac.cr.cementazo.modelo.Personaje;
+import ucr.ac.cr.cementazo.modelo.Recursos;
+import ucr.ac.cr.cementazo.modelo.ReproductorAudio;
 import ucr.ac.cr.cementazo.vista.GuiJuego;
 import ucr.ac.cr.cementazo.vista.PanelJuego;
 
@@ -15,43 +23,182 @@ public class ControlJuego implements KeyListener {
 
     private static final Font FUENTE_MARCADOR = new Font("SansSerif", Font.BOLD, 20);
     private static final Font FUENTE_AVISO = new Font("SansSerif", Font.PLAIN, 14);
+    private static final Font FUENTE_TITULO = new Font("SansSerif", Font.BOLD, 56);
+    private static final Font FUENTE_SUBTITULO = new Font("SansSerif", Font.PLAIN, 22);
     private static final Font FUENTE_FIN = new Font("SansSerif", Font.BOLD, 36);
     private static final Font FUENTE_PUNTOS = new Font("SansSerif", Font.BOLD, 24);
     private static final Font FUENTE_AYUDA = new Font("SansSerif", Font.PLAIN, 18);
+
+    private static final int FPS_OBJETIVO = 60;
+    private static final long NS_POR_FRAME = 1000000000L / FPS_OBJETIVO;
+    private static final int MAX_PASOS_ATRASO = 5;
 
     private GuiJuego guiJuego;
     private PanelJuego panelJuego;
     private Area area;
     private Personaje bolanos;
-    private controlCementos cementos;
+    private GameState currentState;
+    private ReproductorAudio musica;
+
+    private Timer bucle;
+    private long ultimoTickNs;
+    private long acumuladorNs;
+    private long ultimoConteoFpsNs;
+    private int framesContados;
+    private int fpsActuales;
 
     public ControlJuego(GuiJuego guiJuego) {
         this.guiJuego = guiJuego;
+        currentState = GameState.MENU_PRINCIPAL;
+        musica = new ReproductorAudio();
+        musica.cargarEnSegundoPlano(Recursos.MUSICA_FONDO);
         area = new Area();
         bolanos = area.getBolanos();
         panelJuego = guiJuego.getPanelJuego();
         if (panelJuego != null) {
             panelJuego.setControlador(this);
-        }
-        cementos = new controlCementos(area, panelJuego);
-        if (panelJuego != null) {
-            cementos.start();
+            panelJuego.setFondo(Recursos.FONDO);
+            iniciarBucle();
         }
         guiJuego.setFocusable(true);
         guiJuego.requestFocusInWindow();
     }
 
-    public void dibujar(Graphics g) {
+    private void iniciarBucle() {
+        ultimoTickNs = System.nanoTime();
+        ultimoConteoFpsNs = ultimoTickNs;
+        acumuladorNs = 0;
+        framesContados = 0;
+        fpsActuales = 0;
+        bucle = new Timer(1000 / FPS_OBJETIVO, new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                tick();
+            }
+        });
+        bucle.start();
+    }
+
+    private void tick() {
+        long ahoraNs = System.nanoTime();
+        acumuladorNs += ahoraNs - ultimoTickNs;
+        ultimoTickNs = ahoraNs;
+        if (acumuladorNs > NS_POR_FRAME * MAX_PASOS_ATRASO) {
+            acumuladorNs = NS_POR_FRAME * MAX_PASOS_ATRASO;
+        }
+        int pasos = 0;
+        while (acumuladorNs >= NS_POR_FRAME) {
+            actualizarLogica();
+            acumuladorNs -= NS_POR_FRAME;
+            pasos++;
+        }
+        if (pasos > 0 && panelJuego != null) {
+            panelJuego.repaint();
+            framesContados++;
+        }
+        if (ahoraNs - ultimoConteoFpsNs >= 1000000000L) {
+            fpsActuales = framesContados;
+            framesContados = 0;
+            ultimoConteoFpsNs = ahoraNs;
+        }
+    }
+
+    private void actualizarLogica() {
+        if (currentState != GameState.JUGANDO) {
+            return;
+        }
+        area.actualizar();
+        revisarFinDePartida();
+    }
+
+    public int getFpsActuales() {
+        return fpsActuales;
+    }
+
+    public GameState getCurrentState() {
+        return currentState;
+    }
+
+    public void setCurrentState(GameState nuevoEstado) {
+        if (nuevoEstado == null || nuevoEstado == currentState) {
+            return;
+        }
+        currentState = nuevoEstado;
+        aplicarAudioDeEstado(nuevoEstado);
+    }
+
+    private void aplicarAudioDeEstado(GameState estado) {
+        if (musica == null) {
+            return;
+        }
+        switch (estado) {
+            case JUGANDO:
+                musica.reproducirEnBucle();
+                break;
+            case MENU_PRINCIPAL:
+            case FIN_PARTIDA:
+                musica.detener();
+                break;
+        }
+    }
+
+    public void empezarPartida() {
+        area.iniciarPartida();
+        if (panelJuego != null) {
+            panelJuego.setFondo(Recursos.FONDO);
+        }
+        setCurrentState(GameState.JUGANDO);
+    }
+
+    public void volverAlMenu() {
+        setCurrentState(GameState.MENU_PRINCIPAL);
+    }
+
+    public void revisarFinDePartida() {
+        if (currentState == GameState.JUGANDO && area.estaTerminado()) {
+            setCurrentState(GameState.FIN_PARTIDA);
+        }
+    }
+
+    public void dibujarMenu(Graphics g) {
+        g.setColor(new Color(0, 0, 0, 180));
+        g.fillRect(0, 200, Area.ANCHO, 260);
+        g.setColor(Color.WHITE);
+        dibujarCentrado(g, "CEMENTAZO: El Juego", FUENTE_TITULO, 290);
+        dibujarCentrado(g, "Presione ENTER para empezar", FUENTE_SUBTITULO, 360);
+        dibujarCentrado(g, "Flechas para moverse   |   ESC para salir", FUENTE_AYUDA, 410);
+    }
+
+    public void dibujarJugando(Graphics g) {
         bolanos = area.getBolanos();
         bolanos.show(g);
-        for (int i = 0; i < area.getCaidas().size(); i++) {
-            ObjetoCaida objeto = area.getCaidas().get(i);
-            objeto.show(g);
+        ArrayList<ObjetoCaida> objetos = area.getCaidas();
+        for (int i = 0; i < objetos.size(); i++) {
+            objetos.get(i).show(g);
+        }
+        ArrayList<Perico> pericos = area.getPericos();
+        for (int i = 0; i < pericos.size(); i++) {
+            pericos.get(i).show(g);
         }
         dibujarMarcador(g);
-        if (area.estaTerminado()) {
-            dibujarFin(g);
-        }
+    }
+
+    public void dibujarFinPartida(Graphics g) {
+        dibujarJugando(g);
+        g.setColor(new Color(0, 0, 0, 190));
+        g.fillRect(0, 220, Area.ANCHO, 210);
+        g.setColor(Color.WHITE);
+        dibujarCentrado(g, "GAME OVER - La burocracia ganó", FUENTE_FIN, 285);
+        dibujarCentrado(g, "Puntos: " + area.getPuntaje(), FUENTE_PUNTOS, 335);
+        dibujarCentrado(g, "Presione R para reiniciar", FUENTE_AYUDA, 375);
+        dibujarCentrado(g, "ENTER para el menú   |   ESC para salir", FUENTE_AYUDA, 405);
+    }
+
+    private void dibujarCentrado(Graphics g, String texto, Font fuente, int y) {
+        g.setFont(fuente);
+        FontMetrics medidas = g.getFontMetrics(fuente);
+        int x = (Area.ANCHO - medidas.stringWidth(texto)) / 2;
+        g.drawString(texto, x, y);
     }
 
     private void dibujarMarcador(Graphics g) {
@@ -60,25 +207,11 @@ public class ControlJuego implements KeyListener {
         g.setColor(Color.WHITE);
         g.setFont(FUENTE_MARCADOR);
         g.drawString("Vidas: " + area.getBolanos().getVidas(), 24, 40);
+        g.drawString("FPS: " + fpsActuales, 150, 40);
         g.drawString("Puntos: " + area.getPuntaje(), 24, 68);
         g.setFont(FUENTE_AVISO);
-        g.drawString("Dificultad", 200, 40);
-    }
-
-    private void dibujarFin(Graphics g) {
-        g.setColor(new Color(0, 0, 0, 180));
-        g.fillRect(220, 220, 560, 200);
-        g.setColor(Color.WHITE);
-        g.setFont(FUENTE_FIN);
-        g.drawString("Fin de la partida", 320, 290);
-        g.setFont(FUENTE_PUNTOS);
-        g.drawString("Puntos: " + area.getPuntaje(), 400, 335);
-        g.setFont(FUENTE_AYUDA);
-        g.drawString("ENTER para jugar de nuevo   |   ESC para salir", 270, 380);
-    }
-
-    public void iniciar(Graphics g) {
-        dibujar(g);
+        g.drawString(area.getNombreFondo(), 270, 40);
+        g.drawString("Dificultad", 200, 68);
     }
 
     @Override
@@ -88,16 +221,31 @@ public class ControlJuego implements KeyListener {
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+            if (musica != null) {
+                musica.liberar();
+            }
             System.exit(0);
-        } else if (e.getKeyCode() == KeyEvent.VK_ENTER && area.estaTerminado()) {
-            area.iniciarPartida();
-        } else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
-            area.moverIzquierda();
-        } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
-            area.moverDerecha();
         }
-        if (panelJuego != null) {
-            panelJuego.repaint();
+        switch (currentState) {
+            case MENU_PRINCIPAL:
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    empezarPartida();
+                }
+                break;
+            case JUGANDO:
+                if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                    area.moverIzquierda();
+                } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                    area.moverDerecha();
+                }
+                break;
+            case FIN_PARTIDA:
+                if (e.getKeyCode() == KeyEvent.VK_R) {
+                    empezarPartida();
+                } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    volverAlMenu();
+                }
+                break;
         }
     }
 

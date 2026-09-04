@@ -5,9 +5,8 @@
  */
 package ucr.ac.cr.cementazo.modelo;
 
+import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Image;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 /**
@@ -64,6 +63,16 @@ public class Principal {
         return imagen.getIconHeight();
     }
 
+    public boolean colisionaCon(Principal otro) {
+        if (otro == null) {
+            return false;
+        }
+        return getX() < otro.getX() + otro.getAncho()
+                && getX() + getAncho() > otro.getX()
+                && getY() < otro.getY() + otro.getAlto()
+                && getY() + getAlto() > otro.getY();
+    }
+
     public boolean tocaLaTablaDe(Principal personaje) {
         return tocaLaTablaDe(personaje, 8);
     }
@@ -80,9 +89,15 @@ public class Principal {
     }
 
     public void show(Graphics g){
-        if (imagen != null) {
-            imagen.paintIcon(null, g, getX(), getY());
+        if (g == null) {
+            return;
         }
+        if (imagen != null && imagen.getIconWidth() > 0 && imagen.getIconHeight() > 0) {
+            imagen.paintIcon(null, g, getX(), getY());
+            return;
+        }
+        g.setColor(new Color(80, 80, 80));
+        g.fillRect(getX(), getY(), getAncho(), getAlto());
     }
    
     

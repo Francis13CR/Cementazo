@@ -14,7 +14,9 @@ import java.awt.Graphics;
 import java.awt.Image;
 import javax.swing.ImageIcon;
 import ucr.ac.cr.cementazo.controlador.ControlJuego;
+import ucr.ac.cr.cementazo.modelo.Area;
 import ucr.ac.cr.cementazo.modelo.Personaje;
+import ucr.ac.cr.cementazo.modelo.Recursos;
 
 /**
  *
@@ -35,11 +37,7 @@ public class PanelJuego extends javax.swing.JPanel {
     public PanelJuego() {
         initComponents();
         setDoubleBuffered(true);
-        fondo = ucr.ac.cr.cementazo.modelo.Recursos.cargar("fondo.png");
-        if (fondo != null && fondo.getImage() != null) {
-            imagenFondo = fondo.getImage();
-            imagenFondo.getWidth(null);
-        }
+        setFondo(Recursos.FONDO);
    // fondoIcon= new ImageIcon(fondo.getImage().getScaledInstance(1000,700,Image.SCALE_AREA_AVERAGING));
     }
 public void setControlador(ControlJuego controlJuego){
@@ -47,6 +45,16 @@ public void setControlador(ControlJuego controlJuego){
 }
 public void setPersonaje(Personaje bolanos){
      this.bolanos=bolanos;
+}
+
+public void setFondo(String nombre) {
+    fondo = Recursos.cargarOColor(nombre, Recursos.COLOR_FONDO, Area.ANCHO, Area.ALTO);
+    if (Recursos.esValida(fondo)) {
+        imagenFondo = fondo.getImage();
+    } else {
+        imagenFondo = null;
+    }
+    repaint();
 }
 
 public void actualizar(Graphics g){
@@ -57,13 +65,26 @@ public void actualizar(Graphics g){
 @Override
 protected void paintComponent(Graphics g){
     super.paintComponent(g);
+    g.setColor(Recursos.COLOR_FONDO);
+    g.fillRect(0, 0, getWidth(), getHeight());
     if (imagenFondo != null) {
-        g.drawImage(imagenFondo, 0, 0, null);
-    } else if (fondo != null) {
+        g.drawImage(imagenFondo, 0, 0, getWidth(), getHeight(), this);
+    } else if (Recursos.esValida(fondo)) {
         fondo.paintIcon(null, g, 0, 0);
     }
-    if (controlJuego != null) {
-        controlJuego.dibujar(g);
+    if (controlJuego == null) {
+        return;
+    }
+    switch (controlJuego.getCurrentState()) {
+        case MENU_PRINCIPAL:
+            controlJuego.dibujarMenu(g);
+            break;
+        case JUGANDO:
+            controlJuego.dibujarJugando(g);
+            break;
+        case FIN_PARTIDA:
+            controlJuego.dibujarFinPartida(g);
+            break;
     }
 }
     /**
