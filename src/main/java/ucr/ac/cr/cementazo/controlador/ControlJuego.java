@@ -18,6 +18,7 @@ import ucr.ac.cr.cementazo.modelo.Recursos;
 import ucr.ac.cr.cementazo.modelo.ReproductorAudio;
 import ucr.ac.cr.cementazo.vista.GuiJuego;
 import ucr.ac.cr.cementazo.vista.PanelJuego;
+import ucr.ac.cr.cementazo.vista.TextosLegales;
 
 public class ControlJuego implements KeyListener {
 
@@ -28,6 +29,10 @@ public class ControlJuego implements KeyListener {
     private static final Font FUENTE_FIN = new Font("SansSerif", Font.BOLD, 36);
     private static final Font FUENTE_PUNTOS = new Font("SansSerif", Font.BOLD, 24);
     private static final Font FUENTE_AYUDA = new Font("SansSerif", Font.PLAIN, 18);
+    private static final Font FUENTE_DESCARGO = new Font("SansSerif", Font.PLAIN, 12);
+
+    private static final Color COLOR_FONDO_LEGAL = new Color(0, 0, 0, 190);
+    private static final Color COLOR_TEXTO_LEGAL = new Color(225, 225, 225);
 
     private static final int FPS_OBJETIVO = 60;
     private static final long NS_POR_FRAME = 1000000000L / FPS_OBJETIVO;
@@ -36,7 +41,7 @@ public class ControlJuego implements KeyListener {
     private GuiJuego guiJuego;
     private PanelJuego panelJuego;
     private Area area;
-    private Personaje bolanos;
+    private Personaje jugador;
     private GameState currentState;
     private ReproductorAudio musica;
 
@@ -53,7 +58,7 @@ public class ControlJuego implements KeyListener {
         musica = new ReproductorAudio();
         musica.cargarEnSegundoPlano(Recursos.MUSICA_FONDO);
         area = new Area();
-        bolanos = area.getBolanos();
+        jugador = area.getJugador();
         panelJuego = guiJuego.getPanelJuego();
         if (panelJuego != null) {
             panelJuego.setControlador(this);
@@ -162,16 +167,18 @@ public class ControlJuego implements KeyListener {
 
     public void dibujarMenu(Graphics g) {
         g.setColor(new Color(0, 0, 0, 180));
-        g.fillRect(0, 200, Area.ANCHO, 260);
+        g.fillRect(0, 170, Area.ANCHO, 310);
         g.setColor(Color.WHITE);
-        dibujarCentrado(g, "CEMENTAZO: El Juego", FUENTE_TITULO, 290);
-        dibujarCentrado(g, "Presione ENTER para empezar", FUENTE_SUBTITULO, 360);
-        dibujarCentrado(g, "Flechas para moverse   |   ESC para salir", FUENTE_AYUDA, 410);
+        dibujarCentrado(g, TextosLegales.TITULO, FUENTE_TITULO, 250);
+        dibujarCentrado(g, TextosLegales.SUBTITULO, FUENTE_SUBTITULO, 300);
+        dibujarCentrado(g, "Presione ENTER para empezar", FUENTE_SUBTITULO, 370);
+        dibujarCentrado(g, "Flechas para moverse   |   ESC para salir", FUENTE_AYUDA, 415);
+        dibujarDescargo(g);
     }
 
     public void dibujarJugando(Graphics g) {
-        bolanos = area.getBolanos();
-        bolanos.show(g);
+        jugador = area.getJugador();
+        jugador.show(g);
         ArrayList<ObjetoCaida> objetos = area.getCaidas();
         for (int i = 0; i < objetos.size(); i++) {
             objetos.get(i).show(g);
@@ -192,6 +199,21 @@ public class ControlJuego implements KeyListener {
         dibujarCentrado(g, "Puntos: " + area.getPuntaje(), FUENTE_PUNTOS, 335);
         dibujarCentrado(g, "Presione R para reiniciar", FUENTE_AYUDA, 375);
         dibujarCentrado(g, "ENTER para el menú   |   ESC para salir", FUENTE_AYUDA, 405);
+        dibujarDescargo(g);
+    }
+
+    private void dibujarDescargo(Graphics g) {
+        g.setColor(COLOR_FONDO_LEGAL);
+        g.fillRect(0, 595, Area.ANCHO, Area.ALTO - 595);
+        g.setColor(COLOR_TEXTO_LEGAL);
+        g.setFont(FUENTE_DESCARGO);
+        FontMetrics medidas = g.getFontMetrics();
+        int y = 617;
+        for (int i = 0; i < TextosLegales.DESCARGO.length; i++) {
+            String linea = TextosLegales.DESCARGO[i];
+            g.drawString(linea, (Area.ANCHO - medidas.stringWidth(linea)) / 2, y);
+            y += medidas.getHeight();
+        }
     }
 
     private void dibujarCentrado(Graphics g, String texto, Font fuente, int y) {
@@ -206,7 +228,7 @@ public class ControlJuego implements KeyListener {
         g.fillRect(12, 12, 360, 78);
         g.setColor(Color.WHITE);
         g.setFont(FUENTE_MARCADOR);
-        g.drawString("Vidas: " + area.getBolanos().getVidas(), 24, 40);
+        g.drawString("Vidas: " + area.getJugador().getVidas(), 24, 40);
         g.drawString("FPS: " + fpsActuales, 150, 40);
         g.drawString("Puntos: " + area.getPuntaje(), 24, 68);
         g.setFont(FUENTE_AVISO);

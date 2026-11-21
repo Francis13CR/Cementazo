@@ -15,7 +15,6 @@ import java.awt.Image;
 import javax.swing.ImageIcon;
 import ucr.ac.cr.cementazo.controlador.ControlJuego;
 import ucr.ac.cr.cementazo.modelo.Area;
-import ucr.ac.cr.cementazo.modelo.Personaje;
 import ucr.ac.cr.cementazo.modelo.Recursos;
 
 /**
@@ -25,7 +24,6 @@ import ucr.ac.cr.cementazo.modelo.Recursos;
 public class PanelJuego extends javax.swing.JPanel {
     
 
-    private Personaje bolanos;
     private ControlJuego controlJuego;
     private ImageIcon fondo;
     private Image imagenFondo;
@@ -42,9 +40,6 @@ public class PanelJuego extends javax.swing.JPanel {
     }
 public void setControlador(ControlJuego controlJuego){
         this.controlJuego=controlJuego;
-}
-public void setPersonaje(Personaje bolanos){
-     this.bolanos=bolanos;
 }
 
 public void setFondo(String nombre) {

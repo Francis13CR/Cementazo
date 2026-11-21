@@ -1,0 +1,38 @@
+# Licencia de assets
+
+Este archivo cubre **arte, imágenes y música**. El código fuente tiene su propia
+licencia en `LICENSE` (MIT).
+
+## Imágenes y sprites
+
+Los archivos de `src/main/resources/img/` son obra del autor del proyecto según
+declaración del dueño. Se incluyen en las distribuciones del juego con **todos
+los derechos reservados**. No se concede permiso para extraerlos, reutilizarlos,
+venderlos ni redistribuirlos por separado.
+
+Si algún archivo no fue creado por el autor, debe reemplazarse o documentarse
+con su licencia correspondiente en `ASSETS.md` antes de publicar.
+
+## Música
+
+`src/main/resources/music/tema_fondo.wav` es una obra de un tercero. Se usa con
+permiso del autor de la música. Todos los derechos sobre la música pertenecen a
+su autor.
+
+El permiso debe constar por escrito, con el alcance de uso (distribución,
+modificación de formato, uso comercial, territorio y crédito), en
+`docs/permiso-musica.md`. Mientras esa constancia no esté completa, el proyecto
+no debe publicarse comercialmente.
+
+## Licencias de terceros
+
+Si se añaden fuentes, sonidos, imágenes o librerías de terceros, registrar en
+`ASSETS.md`:
+
+- autor o titular;
+- URL de origen;
+- licencia exacta;
+- modificaciones realizadas;
+- texto de atribución requerido.
+
+No se debe asumir que una obra es libre por estar publicada en internet.

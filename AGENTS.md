@@ -3,6 +3,7 @@
 ## Layout
 - The workspace root is a wrapper: the real Maven project and the only git repo live in `Cementazo/`. Maven commands from the root fail with "no POM in this directory".
 - `run.sh` (root, outside git) builds and launches the game. `Cementazo/arte_retirado/` is retired art, not referenced by code.
+- `PLAN_MEJORAS.md` is the detailed improvement and legal roadmap. Check the current round/phase before starting work.
 
 ## Build and run
 - JDK 21 and Maven 3.8.7 are installed system-wide; there is no Maven wrapper and no dependencies.
@@ -21,3 +22,7 @@
 - `GuiJuego.java` and `PanelJuego.java` are NetBeans Matisse forms paired with `.form` files. Do not hand-edit inside `//GEN-BEGIN` blocks (they are regenerated); add code outside those regions or use NetBeans.
 - Missing images silently become solid-color rectangles (`Recursos`); missing audio only logs a warning. If sprites look like colored blocks, check asset names/paths instead of assuming a rendering bug. `Recursos` tries `./src/main/resources/img/...` relative to the current directory first, then the classpath `/img/...`.
 - User-facing text is Spanish; keep new messages consistent.
+
+## Content and legal
+- Read `LEGAL.md` and `ASSETS.md` before adding characters, dialogue, images, or music. The game is fiction satire: do not add real people's names, likenesses, logos, or unproven factual accusations.
+- Code is MIT (`LICENSE`); images are all rights reserved (`LICENSE-ASSETS`); music is third-party with permission documented in `docs/permiso-musica.md`. Record any new asset's provenance in `ASSETS.md` before committing it.

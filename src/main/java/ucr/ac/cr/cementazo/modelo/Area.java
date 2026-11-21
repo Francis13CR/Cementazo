@@ -14,7 +14,7 @@ public class Area {
 
     private ArrayList<ObjetoCaida> caidas;
     private ArrayList<Perico> pericos;
-    private Personaje bolanos;
+    private Personaje jugador;
     private int puntaje;
     private boolean terminado;
     private double tiempoMs;
@@ -57,7 +57,7 @@ public class Area {
         if (imgDerecha != null && imgDerecha.getIconHeight() > 0) {
             altoPers = imgDerecha.getIconHeight();
         }
-        bolanos = new Personaje(imgDerecha, 400, ALTO - altoPers - 12, 3);
+        jugador = new Personaje(imgDerecha, 400, ALTO - altoPers - 12, 3);
         puntaje = 0;
         terminado = false;
         tiempoMs = 0;
@@ -75,8 +75,8 @@ public class Area {
         return Recursos.FONDO;
     }
 
-    public Personaje getBolanos() {
-        return bolanos;
+    public Personaje getJugador() {
+        return jugador;
     }
 
     public ArrayList<ObjetoCaida> getCaidas() {
@@ -107,25 +107,25 @@ public class Area {
         if (terminado) {
             return;
         }
-        int nuevoX = bolanos.getX() - 24;
+        int nuevoX = jugador.getX() - 24;
         if (nuevoX < 0) {
             nuevoX = 0;
         }
-        bolanos.setX(nuevoX);
-        bolanos.setImagen(imgIzquierda);
+        jugador.setX(nuevoX);
+        jugador.setImagen(imgIzquierda);
     }
 
     public void moverDerecha() {
         if (terminado) {
             return;
         }
-        int limite = ANCHO - bolanos.getAncho();
-        int nuevoX = bolanos.getX() + 24;
+        int limite = ANCHO - jugador.getAncho();
+        int nuevoX = jugador.getX() + 24;
         if (nuevoX > limite) {
             nuevoX = limite;
         }
-        bolanos.setX(nuevoX);
-        bolanos.setImagen(imgDerecha);
+        jugador.setX(nuevoX);
+        jugador.setImagen(imgDerecha);
     }
 
     public void actualizar() {
@@ -154,7 +154,7 @@ public class Area {
                 if (objeto.getTipo() == TipoCaida.CEMENTO) {
                     perderVida();
                 }
-            } else if (objeto.tocaLaTablaDe(bolanos, holgura)) {
+            } else if (objeto.tocaLaTablaDe(jugador, holgura)) {
                 recorrido.remove();
                 atrapar(objeto);
             }
@@ -253,10 +253,10 @@ public class Area {
         if (invulnerableMs > 0 || terminado) {
             return;
         }
-        bolanos.setVidas(bolanos.getVidas() - 1);
+        jugador.setVidas(jugador.getVidas() - 1);
         invulnerableMs = 1000;
-        if (bolanos.getVidas() <= 0) {
-            bolanos.setVidas(0);
+        if (jugador.getVidas() <= 0) {
+            jugador.setVidas(0);
             terminado = true;
         }
     }

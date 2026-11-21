@@ -139,6 +139,10 @@ Estado actual conocido:
 
 ### Fase 1.1 — Legal y contenido (hacer primero)
 
+> **Estado (2026-11-21):** T1-T4 implementadas en el repositorio. Pendientes
+> antes de un release público/comercial: completar `docs/permiso-musica.md` con
+> la constancia del autor y hacer la búsqueda formal de marca si se monetiza.
+
 #### R1-F1-T1: Documento legal y descargo
 
 **Objetivo:** dejar por escrito que es una obra de ficción satírica y fijar las reglas de contenido.

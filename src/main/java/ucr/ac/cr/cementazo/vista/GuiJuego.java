@@ -55,7 +55,7 @@ public void actualizar(Graphics g){
         panelJuego1 = new ucr.ac.cr.cementazo.vista.PanelJuego();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Cementazo");
+        setTitle(TextosLegales.TITULO);
 
         javax.swing.GroupLayout panelJuego1Layout = new javax.swing.GroupLayout(panelJuego1);
         panelJuego1.setLayout(panelJuego1Layout);
