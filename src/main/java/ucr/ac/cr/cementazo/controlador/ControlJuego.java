@@ -8,7 +8,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import javax.swing.Timer;
 import ucr.ac.cr.cementazo.modelo.Area;
 import ucr.ac.cr.cementazo.modelo.ObjetoCaida;
@@ -51,6 +55,7 @@ public class ControlJuego implements KeyListener {
     private long ultimoConteoFpsNs;
     private int framesContados;
     private int fpsActuales;
+    private final Set<Integer> teclasAccionPresionadas = new HashSet<Integer>();
 
     public ControlJuego(GuiJuego guiJuego) {
         this.guiJuego = guiJuego;
@@ -65,8 +70,35 @@ public class ControlJuego implements KeyListener {
             panelJuego.setFondo(area.getArchivoFondo());
             iniciarBucle();
         }
+        instalarPausaPorFoco();
         guiJuego.setFocusable(true);
         guiJuego.requestFocusInWindow();
+    }
+
+    private void instalarPausaPorFoco() {
+        guiJuego.addWindowFocusListener(new WindowAdapter() {
+            @Override
+            public void windowLostFocus(WindowEvent e) {
+                alPerderFoco();
+            }
+        });
+        guiJuego.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowIconified(WindowEvent e) {
+                alPerderFoco();
+            }
+        });
+    }
+
+    private void alPerderFoco() {
+        teclasAccionPresionadas.clear();
+        pausarSiJugando();
+    }
+
+    private void pausarSiJugando() {
+        if (currentState == GameState.JUGANDO) {
+            setCurrentState(GameState.PAUSA);
+        }
     }
 
     private void iniciarBucle() {
@@ -97,7 +129,7 @@ public class ControlJuego implements KeyListener {
             acumuladorNs -= NS_POR_FRAME;
             pasos++;
         }
-        if (pasos > 0 && panelJuego != null) {
+        if (pasos > 0 && currentState == GameState.JUGANDO && panelJuego != null) {
             panelJuego.repaint();
             framesContados++;
         }
@@ -124,17 +156,28 @@ public class ControlJuego implements KeyListener {
         if (nuevoEstado == null || nuevoEstado == currentState) {
             return;
         }
+        GameState anterior = currentState;
         currentState = nuevoEstado;
-        aplicarAudioDeEstado(nuevoEstado);
+        aplicarAudioDeEstado(anterior, nuevoEstado);
+        if (panelJuego != null) {
+            panelJuego.repaint();
+        }
     }
 
-    private void aplicarAudioDeEstado(GameState estado) {
+    private void aplicarAudioDeEstado(GameState anterior, GameState nuevo) {
         if (musica == null) {
             return;
         }
-        switch (estado) {
+        switch (nuevo) {
             case JUGANDO:
-                musica.reproducirEnBucle();
+                if (anterior == GameState.PAUSA) {
+                    musica.reanudar();
+                } else {
+                    musica.reproducirEnBucle();
+                }
+                break;
+            case PAUSA:
+                musica.pausar();
                 break;
             case MENU_PRINCIPAL:
             case FIN_PARTIDA:
@@ -155,6 +198,44 @@ public class ControlJuego implements KeyListener {
         setCurrentState(GameState.MENU_PRINCIPAL);
     }
 
+    public void pausarPartida() {
+        if (currentState == GameState.JUGANDO) {
+            setCurrentState(GameState.PAUSA);
+        }
+    }
+
+    public void reanudarPartida() {
+        if (currentState == GameState.PAUSA) {
+            setCurrentState(GameState.JUGANDO);
+        }
+    }
+
+    private void alternarSilencio() {
+        if (musica == null) {
+            return;
+        }
+        musica.silenciar(!musica.estaSilenciado());
+        if (panelJuego != null) {
+            panelJuego.repaint();
+        }
+    }
+
+    private String estadoSilencio() {
+        return musica != null && musica.estaSilenciado() ? "ON" : "OFF";
+    }
+
+    private void cerrarJuego() {
+        if (bucle != null) {
+            bucle.stop();
+        }
+        if (musica != null) {
+            musica.liberar();
+        }
+        if (guiJuego != null) {
+            guiJuego.dispatchEvent(new WindowEvent(guiJuego, WindowEvent.WINDOW_CLOSING));
+        }
+    }
+
     public void revisarFinDePartida() {
         if (currentState == GameState.JUGANDO && area.estaTerminado()) {
             setCurrentState(GameState.FIN_PARTIDA);
@@ -169,6 +250,19 @@ public class ControlJuego implements KeyListener {
         dibujarCentrado(g, TextosLegales.SUBTITULO, FUENTE_SUBTITULO, 300);
         dibujarCentrado(g, "Presione ENTER para empezar", FUENTE_SUBTITULO, 370);
         dibujarCentrado(g, "Flechas para moverse   |   ESC para salir", FUENTE_AYUDA, 415);
+        dibujarCentrado(g, "M: silencio " + estadoSilencio(), FUENTE_AYUDA, 440);
+        dibujarDescargo(g);
+    }
+
+    public void dibujarPausa(Graphics g) {
+        dibujarJugando(g);
+        g.setColor(new Color(0, 0, 0, 190));
+        g.fillRect(0, 200, Area.ANCHO, 260);
+        g.setColor(Color.WHITE);
+        dibujarCentrado(g, "PAUSA", FUENTE_FIN, 280);
+        dibujarCentrado(g, "P: continuar", FUENTE_AYUDA, 340);
+        dibujarCentrado(g, "ESC: volver al menú", FUENTE_AYUDA, 380);
+        dibujarCentrado(g, "M: silencio " + estadoSilencio(), FUENTE_AYUDA, 420);
         dibujarDescargo(g);
     }
 
@@ -194,7 +288,7 @@ public class ControlJuego implements KeyListener {
         dibujarCentrado(g, "GAME OVER - La burocracia ganó", FUENTE_FIN, 285);
         dibujarCentrado(g, "Puntos: " + area.getPuntaje(), FUENTE_PUNTOS, 335);
         dibujarCentrado(g, "Presione R para reiniciar", FUENTE_AYUDA, 375);
-        dibujarCentrado(g, "ENTER para el menú   |   ESC para salir", FUENTE_AYUDA, 405);
+        dibujarCentrado(g, "ENTER o ESC: menú", FUENTE_AYUDA, 405);
         dibujarDescargo(g);
     }
 
@@ -237,36 +331,59 @@ public class ControlJuego implements KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-            if (musica != null) {
-                musica.liberar();
-            }
-            System.exit(0);
+        int codigo = e.getKeyCode();
+        if (esTeclaDeAccion(codigo) && !teclasAccionPresionadas.add(codigo)) {
+            return;
+        }
+        if (codigo == KeyEvent.VK_M) {
+            alternarSilencio();
+            return;
         }
         switch (currentState) {
             case MENU_PRINCIPAL:
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                if (codigo == KeyEvent.VK_ENTER) {
                     empezarPartida();
+                } else if (codigo == KeyEvent.VK_ESCAPE) {
+                    cerrarJuego();
                 }
                 break;
             case JUGANDO:
-                if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                if (codigo == KeyEvent.VK_P || codigo == KeyEvent.VK_ESCAPE) {
+                    pausarPartida();
+                } else if (codigo == KeyEvent.VK_LEFT) {
                     area.moverIzquierda();
-                } else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                } else if (codigo == KeyEvent.VK_RIGHT) {
                     area.moverDerecha();
                 }
                 break;
+            case PAUSA:
+                if (codigo == KeyEvent.VK_P) {
+                    reanudarPartida();
+                } else if (codigo == KeyEvent.VK_ESCAPE) {
+                    volverAlMenu();
+                }
+                break;
             case FIN_PARTIDA:
-                if (e.getKeyCode() == KeyEvent.VK_R) {
+                if (codigo == KeyEvent.VK_R) {
                     empezarPartida();
-                } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                } else if (codigo == KeyEvent.VK_ENTER
+                        || codigo == KeyEvent.VK_ESCAPE) {
                     volverAlMenu();
                 }
                 break;
         }
     }
 
+    private boolean esTeclaDeAccion(int codigo) {
+        return codigo == KeyEvent.VK_P
+                || codigo == KeyEvent.VK_ESCAPE
+                || codigo == KeyEvent.VK_M
+                || codigo == KeyEvent.VK_ENTER
+                || codigo == KeyEvent.VK_R;
+    }
+
     @Override
-    public void keyReleased(KeyEvent arg0) {
+    public void keyReleased(KeyEvent e) {
+        teclasAccionPresionadas.remove(e.getKeyCode());
     }
 }

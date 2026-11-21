@@ -11,6 +11,7 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
+import javax.sound.sampled.FloatControl;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
@@ -23,6 +24,11 @@ public class ReproductorAudio {
     private boolean reproducirAlCargar;
     private boolean cargando;
     private boolean fallido;
+    private boolean silenciado;
+    private boolean pausado;
+    private boolean sonabaAntesDeSilencio;
+    private float gananciaAnterior;
+    private boolean gananciaGuardada;
 
     public synchronized void cargarAudio(String ruta) {
         if (ruta == null || ruta.isEmpty()) {
@@ -58,6 +64,7 @@ public class ReproductorAudio {
             clip = (Clip) AudioSystem.getLine(info);
             clip.open(flujo);
             posicionGuardada = 0;
+            aplicarGanancia();
         } catch (UnsupportedAudioFileException ex) {
             REGISTRO.log(Level.WARNING, "Formato de audio no soportado: " + ruta, ex);
             fallido = true;
@@ -84,7 +91,11 @@ public class ReproductorAudio {
             cargando = false;
             if (reproducirAlCargar && clip != null) {
                 reproducirAlCargar = false;
-                iniciarBucle();
+                if (silenciado && !aplicarGanancia()) {
+                    sonabaAntesDeSilencio = true;
+                } else {
+                    iniciarBucle();
+                }
             }
         }
     }
@@ -114,10 +125,19 @@ public class ReproductorAudio {
             reproducirAlCargar = true;
             return;
         }
+        pausado = false;
+        sonabaAntesDeSilencio = false;
+        if (silenciado && !aplicarGanancia()) {
+            posicionGuardada = 0;
+            sonabaAntesDeSilencio = true;
+            return;
+        }
         iniciarBucle();
     }
 
     public synchronized void pausar() {
+        reproducirAlCargar = false;
+        pausado = true;
         if (clip == null || !clip.isRunning()) {
             return;
         }
@@ -126,21 +146,29 @@ public class ReproductorAudio {
     }
 
     public synchronized void reanudar() {
+        pausado = false;
         if (clip == null) {
             if (!fallido) {
                 reproducirAlCargar = true;
             }
             return;
         }
+        if (silenciado && !aplicarGanancia()) {
+            sonabaAntesDeSilencio = true;
+            return;
+        }
         if (clip.isRunning()) {
             return;
         }
+        sonabaAntesDeSilencio = false;
         clip.setMicrosecondPosition(posicionGuardada);
         clip.loop(Clip.LOOP_CONTINUOUSLY);
     }
 
     public synchronized void detener() {
         reproducirAlCargar = false;
+        pausado = false;
+        sonabaAntesDeSilencio = false;
         posicionGuardada = 0;
         if (clip == null) {
             return;
@@ -151,11 +179,70 @@ public class ReproductorAudio {
 
     public synchronized void liberar() {
         reproducirAlCargar = false;
+        pausado = false;
+        sonabaAntesDeSilencio = false;
         liberarInterno();
+    }
+
+    /**
+     * Activa o desactiva el sonido sin perder la posición de la pista.
+     * Usa MASTER_GAIN si el Clip lo soporta; si no, detiene y reanuda.
+     */
+    public synchronized void silenciar(boolean valor) {
+        if (silenciado == valor) {
+            return;
+        }
+        silenciado = valor;
+        if (clip == null) {
+            return;
+        }
+        if (aplicarGanancia()) {
+            return;
+        }
+        if (valor) {
+            sonabaAntesDeSilencio = clip.isRunning();
+            if (sonabaAntesDeSilencio) {
+                posicionGuardada = clip.getMicrosecondPosition();
+                clip.stop();
+            }
+        } else if (sonabaAntesDeSilencio && !pausado) {
+            clip.setMicrosecondPosition(posicionGuardada);
+            clip.loop(Clip.LOOP_CONTINUOUSLY);
+            sonabaAntesDeSilencio = false;
+        }
+    }
+
+    public synchronized boolean estaSilenciado() {
+        return silenciado;
     }
 
     public synchronized boolean estaSonando() {
         return clip != null && clip.isRunning();
+    }
+
+    private boolean aplicarGanancia() {
+        if (clip == null) {
+            return false;
+        }
+        try {
+            FloatControl ganancia = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+            if (silenciado) {
+                if (!gananciaGuardada) {
+                    gananciaAnterior = ganancia.getValue();
+                    gananciaGuardada = true;
+                }
+                ganancia.setValue(ganancia.getMinimum());
+            } else {
+                float valor = gananciaGuardada ? gananciaAnterior : 0.0f;
+                valor = Math.max(ganancia.getMinimum(), Math.min(ganancia.getMaximum(), valor));
+                ganancia.setValue(valor);
+                gananciaGuardada = false;
+            }
+            return true;
+        } catch (IllegalArgumentException | ClassCastException
+                | IllegalStateException | SecurityException ex) {
+            return false;
+        }
     }
 
     private URL localizarAudio(String ruta) {
@@ -188,6 +275,8 @@ public class ReproductorAudio {
     }
 
     private void iniciarBucle() {
+        pausado = false;
+        sonabaAntesDeSilencio = false;
         if (clip.isRunning()) {
             clip.stop();
         }
@@ -203,5 +292,6 @@ public class ReproductorAudio {
             clip = null;
         }
         posicionGuardada = 0;
+        gananciaGuardada = false;
     }
 }

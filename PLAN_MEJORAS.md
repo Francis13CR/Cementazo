@@ -346,6 +346,13 @@ barras/decoraciones.
 
 ### Fase 1.3 — Pausa, foco y audio
 
+> **Estado (2026-11-21):** T1-T3 implementadas. `P` pausa y reanuda; `ESC`
+> pausa en partida y vuelve al menú desde la pausa. El foco perdido o la ventana
+> minimizada pausan sin reanudar sola, y `M` silencia/restaura con `MASTER_GAIN`
+> (con fallback). Las teclas de acción (`P`, `ESC`, `M`, `ENTER`, `R`) ignoran
+> el auto-repeat. `ReproductorAudioTest` cubre el estado de silencio; las
+> transiciones y el audio se verificaron con un probe manual.
+
 #### R1-F3-T1: Estado `PAUSA`
 
 **Archivos:** `GameState.java`, `ControlJuego.java`, `PanelJuego.java`.
@@ -366,7 +373,7 @@ barras/decoraciones.
    - `PAUSA` + P → `JUGANDO`.
    - `PAUSA` + ESC → `MENU_PRINCIPAL`.
    - `MENU_PRINCIPAL` + ESC → cerrar la ventana.
-   - `FIN_PARTIDA` + R → `JUGANDO`; Enter → `MENU_PRINCIPAL`.
+   - `FIN_PARTIDA` + R → `JUGANDO`; Enter o ESC → `MENU_PRINCIPAL`.
 5. Al pausar: `musica.pausar()`. Al reanudar: `musica.reanudar()`. Al volver al menú: `musica.detener()`.
 6. No usar `System.exit(0)` desde `ControlJuego`; cerrar con `guiJuego.dispatchEvent(new WindowEvent(guiJuego, WindowEvent.WINDOW_CLOSING))` o `guiJuego.dispose()`.
 

@@ -10,7 +10,7 @@
 - `pom.xml` targets Java 8 (`maven.compiler.release=8`); `-Xlint:-options` suppresses javac 21's obsolete-target warning. Do not "fix" it by bumping the version without deciding to drop Java 8.
 - Build: `cd Cementazo && mvn -q clean package` → `target/Cementazo-1.0.jar` (images and music bundled).
 - Run: `java -jar target/Cementazo-1.0.jar` or simply `./run.sh` from the workspace root. The jar has `Main-Class: ucr.ac.cr.cementazo.vista.GuiJuego`.
-- Tests: `mvn test` runs the JUnit 5 model tests under `src/test/java` (currently `AreaTest`). There is no lint, formatter, or CI yet. UI changes still need a manual GUI launch.
+- Tests: `mvn test` runs the JUnit 5 model tests under `src/test/java` (`AreaTest`, `ReproductorAudioTest`). There is no lint, formatter, or CI yet. UI changes still need a manual GUI launch.
 - Launching the game requires a display (`DISPLAY`/Wayland); `mvn test` runs headless.
 - Optional smoke test: `timeout 10s ./run.sh`; exit 124 means the window stayed up. It opens a real window on the user's desktop.
 

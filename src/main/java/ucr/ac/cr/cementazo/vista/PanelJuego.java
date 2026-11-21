@@ -72,6 +72,9 @@ protected void paintComponent(Graphics g){
         case JUGANDO:
             controlJuego.dibujarJugando(g);
             break;
+        case PAUSA:
+            controlJuego.dibujarPausa(g);
+            break;
         case FIN_PARTIDA:
             controlJuego.dibujarFinPartida(g);
             break;

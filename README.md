@@ -19,9 +19,14 @@ Prototipo jugable en mejora activa. El plan detallado está en
 | Tecla | Acción |
 |---|---|
 | ← / → | Mover al personaje |
-| Enter | Empezar |
-| ESC | Salir desde el menú |
+| Enter | Empezar / confirmar; en fin de partida, volver al menú |
+| P | Pausa / reanudar |
+| M | Silenciar / restaurar |
+| ESC | Pausa en partida; menú en pausa/fin; salir en el menú principal |
 | R | Reiniciar al terminar |
+
+El juego se pausa automáticamente al perder el foco o minimizar la ventana.
+No se reanuda solo: hay que pulsar `P`.
 
 ## Requisitos
 
@@ -55,8 +60,8 @@ cd Cementazo
 mvn test
 ```
 
-Hay tests JUnit 5 de la lógica del modelo (por ahora `AreaTest`). La Ronda 3 del
-plan amplía la cobertura y añade CI.
+Hay tests JUnit 5 de la lógica del modelo (`AreaTest`, `ReproductorAudioTest`).
+La Ronda 3 del plan amplía la cobertura y añade CI.
 
 ## Assets y licencias
 
