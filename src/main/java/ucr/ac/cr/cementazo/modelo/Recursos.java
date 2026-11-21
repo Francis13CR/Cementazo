@@ -23,7 +23,7 @@ public class Recursos {
         "bg_alajuela.png"
     };
     public static final String[] NOMBRES_FONDO = {
-        "San José",
+        "Costa Rica",
         "Heredia",
         "Cartago",
         "Limón",

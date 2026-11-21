@@ -5,8 +5,8 @@
  */
 package ucr.ac.cr.cementazo.vista;
 
-import java.awt.Graphics;
 import ucr.ac.cr.cementazo.controlador.ControlJuego;
+import ucr.ac.cr.cementazo.modelo.Recursos;
 
 /**
  *
@@ -22,6 +22,7 @@ private ControlJuego controlJuego;
 public GuiJuego()
 {
     initComponents();
+    ajustarVentana();
     controlJuego=new ControlJuego(this);
     
    panelJuego1.setControlador(controlJuego);
@@ -29,18 +30,28 @@ public GuiJuego()
     this.setFocusable(true);
 }
 
+/**
+ * Elimina los márgenes que agrega el layout de NetBeans y deja el panel
+ * ocupando todo el contenido. Así la ventana mide 1005x687 más decoraciones
+ * y cabe en una pantalla de 1280x800.
+ *
+ * Si se edita el formulario en NetBeans, el editor puede regenerar el layout;
+ * en ese caso volver a aplicar este método.
+ */
+private void ajustarVentana() {
+    getContentPane().removeAll();
+    getContentPane().setBackground(Recursos.COLOR_FONDO);
+    getContentPane().setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.CENTER, 0, 0));
+    getContentPane().add(panelJuego1);
+    pack();
+    setLocationRelativeTo(null);
+    setResizable(false);
+    setMinimumSize(getSize());
+}
+
 
 public PanelJuego getPanelJuego(){
    return panelJuego1;
-}
-
-public ControlJuego getControladorGUIJuego(){
-        return controlJuego;
-}
-
-
-public void actualizar(Graphics g){
-    panelJuego1.actualizar(g);
 }
 
     /**

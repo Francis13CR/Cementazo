@@ -52,11 +52,6 @@ public void setFondo(String nombre) {
     repaint();
 }
 
-public void actualizar(Graphics g){
-    //controladorGUIJuego.iniciar(g);
-    repaint();
-}
-
 @Override
 protected void paintComponent(Graphics g){
     super.paintComponent(g);

@@ -25,10 +25,6 @@ public class ObjetoCaida extends Principal {
         return velocidadY;
     }
 
-    public void setVelocidadY(double velocidadY) {
-        this.velocidadY = velocidadY;
-    }
-
     public boolean estaRobado() {
         return robado;
     }

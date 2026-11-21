@@ -42,15 +42,21 @@ Desde la carpeta del proyecto:
 ```bash
 cd Cementazo
 mvn -q clean package
-java -cp target/Cementazo-1.0.jar ucr.ac.cr.cementazo.vista.GuiJuego
+java -jar target/Cementazo-1.0.jar
 ```
 
-El `pom.xml` todavía no declara `Main-Class`; por eso se ejecuta con `-cp`. La
-tarea de build de la Ronda 1 añadirá `java -jar`.
+El jar incluye `Main-Class: ucr.ac.cr.cementazo.vista.GuiJuego`, así que también
+funciona con `java -jar`. El script `run.sh` hace el build y ejecuta el juego.
 
 ## Tests
 
-Todavía no hay tests automatizados. La Ronda 3 del plan añade JUnit 5 y CI.
+```bash
+cd Cementazo
+mvn test
+```
+
+Hay tests JUnit 5 de la lógica del modelo (por ahora `AreaTest`). La Ronda 3 del
+plan amplía la cobertura y añade CI.
 
 ## Assets y licencias
 

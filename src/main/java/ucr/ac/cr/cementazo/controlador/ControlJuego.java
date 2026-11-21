@@ -62,7 +62,7 @@ public class ControlJuego implements KeyListener {
         panelJuego = guiJuego.getPanelJuego();
         if (panelJuego != null) {
             panelJuego.setControlador(this);
-            panelJuego.setFondo(Recursos.FONDO);
+            panelJuego.setFondo(area.getArchivoFondo());
             iniciarBucle();
         }
         guiJuego.setFocusable(true);
@@ -116,10 +116,6 @@ public class ControlJuego implements KeyListener {
         revisarFinDePartida();
     }
 
-    public int getFpsActuales() {
-        return fpsActuales;
-    }
-
     public GameState getCurrentState() {
         return currentState;
     }
@@ -150,7 +146,7 @@ public class ControlJuego implements KeyListener {
     public void empezarPartida() {
         area.iniciarPartida();
         if (panelJuego != null) {
-            panelJuego.setFondo(Recursos.FONDO);
+            panelJuego.setFondo(area.getArchivoFondo());
         }
         setCurrentState(GameState.JUGANDO);
     }
@@ -233,7 +229,6 @@ public class ControlJuego implements KeyListener {
         g.drawString("Puntos: " + area.getPuntaje(), 24, 68);
         g.setFont(FUENTE_AVISO);
         g.drawString(area.getNombreFondo(), 270, 40);
-        g.drawString("Dificultad", 200, 68);
     }
 
     @Override

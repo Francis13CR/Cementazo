@@ -64,7 +64,7 @@ public class Area {
         invulnerableMs = 0;
         esperaSpawnMs = 400;
         indiceFondo = 0;
-        nombreFondo = "San José";
+        nombreFondo = "Costa Rica";
     }
 
     public String getNombreFondo() {
@@ -93,10 +93,6 @@ public class Area {
 
     public boolean estaTerminado() {
         return terminado;
-    }
-
-    public int getVelocidadCaida() {
-        return (int) Math.round(getVelocidadReal());
     }
 
     public double getVelocidadReal() {

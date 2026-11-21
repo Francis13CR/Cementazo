@@ -23,7 +23,7 @@
 8. No commitear `target/`, el WAV original de 27 MB, ni datos personales.
 9. Si una tarea cambia comportamiento, actualizar `README.md`/`LEGAL.md`/`ASSETS.md` en el mismo commit.
 10. Si algo no está claro, **no inventar nombres reales, licencias ni hechos**: dejar un `TODO` y consultar al dueño.
-11. Al terminar cada ronda, actualizar `AGENTS.md` si cambiaron los comandos, los tests o el CI (por ejemplo, la línea “no hay tests/CI” deja de ser cierta en la Ronda 3).
+11. Al terminar cada ronda, actualizar `AGENTS.md` si cambiaron los comandos, los tests o el CI (por ejemplo, la línea “no hay tests/CI” deja de ser cierta cuando se añaden tests o CI).
 
 ### 0.2 Decisiones que requieren al dueño antes de publicar
 
@@ -237,6 +237,11 @@ Estado actual conocido:
 
 ### Fase 1.2 — Base técnica y bugs obvios
 
+> **Estado (2026-11-21):** T1-T4 implementadas. Se adelantó JUnit 5 + surefire
+> para hacer TDD del cambio de etiqueta de fondo; `mvn test` ejecuta 2 tests de
+> `AreaTest`. `java -jar` ya funciona; la ventana mide 1005x724 (panel 1005x687),
+> queda centrada y no es redimensionable.
+
 #### R1-F2-T1: `Main-Class`, release 8 y plugins
 
 **Objetivo:** que `java -jar` funcione y que el build sea reproducible.
@@ -307,8 +312,8 @@ Estado actual conocido:
    - `GuiJuego.getControladorGUIJuego()`
    - `GuiJuego.actualizar(Graphics)`
    - `PanelJuego.actualizar(Graphics)`
-   - `PanelJuego.setPersonaje(...)` y su campo `bolanos`
-   - `Area.getArchivoFondo()` (se usará en Ronda 2; si no, eliminar)
+   - `PanelJuego.setPersonaje(...)` y su campo `bolanos` (ya eliminados en la Fase 1.1)
+   - `Area.getArchivoFondo()` (conectado en `ControlJuego` para la Ronda 2)
    - `Area.getVelocidadCaida()` (si no se usa)
    - `ObjetoCaida.setVelocidadY(...)` (si no se usa)
    - `ControlJuego.getFpsActuales()` (si no se usa)
@@ -327,10 +332,17 @@ Estado actual conocido:
    - `setLocationRelativeTo(null);`
    - `setResizable(false);` (solución temporal hasta implementar escalado).
    - `setMinimumSize(getSize());`
-2. Añadir icono de ventana si hay un PNG cuadrado adecuado (opcional).
-3. Verificar en 1280x800 y 1920x1080.
+2. Sustituir el layout generado por uno que deje el panel en 1005x687 sin
+   márgenes (`FlowLayout` con gaps 0). El panel no debe estirarse a 724 px.
+3. Añadir icono de ventana si hay un PNG cuadrado adecuado (opcional).
+4. Verificar el tamaño y registrar la medición. En la pantalla actual se midió
+   `frame=1005x724`, `panel=1005x687`, `resizable=false`. Para 1280x800, 724 px
+   dejan 76 px para barras/decoraciones; falta una comprobación visual en un
+   monitor de 1280x800 real.
 
-**Aceptación:** la ventana aparece centrada, no se puede redimensionar y cabe en una pantalla de 1280x800.
+**Aceptación:** la ventana aparece centrada, no se puede redimensionar, el panel
+mide 1005x687 y la ventana (1005x724) cabe en 1280x800 con hasta 76 px de
+barras/decoraciones.
 
 ### Fase 1.3 — Pausa, foco y audio
 
